@@ -53,14 +53,16 @@ def deviation_breakdown(prices: list[PricePoint], cpi: list[CpiPoint], weights: 
 
 
 def item_changes(prices: list[PricePoint], category: str) -> list[dict]:
-    """Year-over-year change of every item of one category at the latest month."""
+    """Year-over-year change of every item of one category at the latest month (previous year matched by date)."""
     result = []
     for item in sorted({p.item for p in prices if p.category.value == category}):
         series = sorted((p for p in prices if p.category.value == category and p.item == item),
                         key=lambda p: p.period)
-        if len(series) < 13:
+        last = series[-1]
+        prev_period = (pd.Timestamp(last.period) - pd.DateOffset(months=12)).date()
+        prev = next((p for p in series if p.period == prev_period), None)
+        if prev is None:
             continue
-        last, prev = series[-1], series[-13]
         result.append({"item": item, "period": str(last.period), "price": last.price, "unit": last.unit,
                        "yoy_pct": round((last.price / prev.price - 1) * 100, 2), "source": last.source})
     return sorted(result, key=lambda d: -abs(d["yoy_pct"]))
