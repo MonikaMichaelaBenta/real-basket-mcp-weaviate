@@ -47,9 +47,13 @@ baskets of goods and different weightings.
 
 Design rationale: [docs/process-redesign.md](docs/process-redesign.md).
 
-Architecture slides (German) in `docs/architecture/`: current state (`RealBasket_Architektur_Ist.pptx`) and a
-target proposal with MCP servers and A2A agents (`RealBasket_Architektur_Vorschlag_MCP_A2A.pptx`). Regenerate
-with `poetry run python docs/architecture/build_decks.py`.
+Architecture slides in `docs/architecture/`:
+
+| Deck | Content | Rebuild |
+|------|---------|---------|
+| `RealBasket_Docker_Compose_DE.pptx` / `_EN.pptx` | **Current architecture** (4 slides each, NTT DATA template): cover, diagram `RealBasket-Architektur mit Docker Compose.png`, the four services and data flows, results and next steps | `poetry run python docs/architecture/build_docker_decks.py` (uses `docs/architecture/templates/agentic-ai-strands.pptx`) |
+| `RealBasket_Architektur_Ist.pptx` | earlier state (German) | `poetry run python docs/architecture/build_decks.py` |
+| `RealBasket_Architektur_Vorschlag_MCP_A2A.pptx` | target proposal with MCP servers and A2A agents (German) | same script |
 
 ```
 Streamlit UI / CLI ──► Orchestrator Agent REALBASKET-ORCHESTRATOR (LLM chooses the tools)
@@ -105,7 +109,10 @@ poetry run pytest
 
 ### Eclipse (optional)
 
-The repo contains an Eclipse `.project` file (UTF-8 encoding preset).
+All files are **UTF-8** (German umlauts, emoji in the UI). `.settings/org.eclipse.core.resources.prefs` and
+`.editorconfig` preset UTF-8. If umlauts show up as two odd characters (e.g. an A with tilde instead of ü) in Eclipse, the project still uses the Windows code page:
+**Project → Properties → Resource → Text file encoding → Other: UTF-8**, then refresh. Saving a file in that state
+breaks it - `tests/test_encoding.py` catches such files.
 
 1. **File → Import… → General → Existing Projects into Workspace**, select the repo folder, leave
    "Copy projects into workspace" unchecked.
@@ -160,12 +167,16 @@ Without the reference PDFs the dashboard, the agent tools and the PDF reports st
 
 | Tab | Content |
 |-----|---------|
-| Header | Essential inflation, VPI, deviation and biggest driver of the latest month + disclaimer + data check |
-| 📈 Index vs. VPI | Both indices (base = 100), YoY rates and deviation (PP), monthly costs per group |
-| 🧩 Einflussfaktoren | Contribution of each category to the deviation, index per category |
-| 🏠 Miete Städte | Real asking rents of the 15 largest cities Jan/Oct 2026 (€/m², 75 m²); coverage per federal state |
-| 📚 Methodenhinweise (RAG) | Index status and search over the reference PDFs with file + page |
-| 🤖 Chat mit RealBasket | Chat (German) with follow-up questions, example questions, tools used per answer |
+| Header | ECLI and VPI year on year, deviation and biggest driver of the latest month + data basis |
+| 📈 Index vs. VPI | Both indices (base 11/2024 = 100), YoY rates, modelled monthly costs per group |
+| 🧩 Einflussfaktoren | Contribution of each category to the deviation; data checks and base amounts |
+| 🏠 Stadtmieten | Published asking rents of the 15 largest cities (Jan/Oct 2026); coverage per federal state |
+| 📄 PDF-Suche (Weaviate) | Semantic search over the reference PDFs (passages with file + page; context only) |
+| 🤖 MCP-Agent | Chat (German) via the agent service; MCP tools used per answer; guardrail warning for unbacked figures |
+| 🛰️ Monitoring | Use-case path of every interaction through the four Docker services (per browser session) |
+
+All data reaches the UI through the agent API (`/tools/{name}`, allow-list) and the MCP server - the UI never
+reads PDFs, SQLite or Weaviate directly.
 
 ### PDF reports
 
@@ -229,7 +240,8 @@ objects, so the calculations stay unchanged.
 
 1. Clone the repo and run `poetry install`, then copy `.env.example` to `.env`.
 2. Create a feature branch: `git checkout -b feature/<short-name>`.
-3. Run `poetry run ruff check .` and `poetry run pytest` before pushing.
+3. Run `poetry run ruff check .` and `poetry run pytest` before pushing (the suite includes an encoding check:
+   every source and doc file must be UTF-8 without broken umlauts).
 4. Open a merge/pull request against `main`.
 
 Never commit `.env` or API keys. Generated PDFs (`/reports/*.pdf`) and the local index (`/data_store`) are
@@ -245,9 +257,29 @@ Mit `docker compose up --build -d` starten vier Dienste:
 
 Details und Windows-Befehle unter [`docs/AGENT_SERVICE_V3.md`](docs/AGENT_SERVICE_V3.md).
 
-### Monitoring (Branch `feature/monitoring-fixes`)
+### Monitoring-Tab
 
-Der Tab **🛰️ Monitoring** zeigt für jede Interaktion den Pfad durch die vier Dienste (UI → Agent-API → MCP →
-Rechenkern / SQLite / Weaviate, LLM-Aufrufe und Tool-Aufrufe des Chats) – nur für die aktuelle Browser-Sitzung.
-Zahlen in Chat-Antworten, die in keinem Tool-Ergebnis vorkommen, werden vom Guardrail im Agent-Service markiert.
+Der Tab **🛰️ Monitoring** zeigt für jede Interaktion den Pfad durch die vier Dienste als Graphviz-Diagramm mit
+nummerierten Kanten und als Schritttabelle (`src/real_basket/ui/monitoring.py`):
+
+| Vorgang | Pfad |
+|---------|------|
+| Dashboard / Referenz-PDF / Berichte | UI → Agent-API `/tools/{name}` (Allow-List) → MCP → Rechenkern / Daten / PDFs – kein LLM |
+| Weaviate-Suche | UI → Agent-API → MCP → Embedding-Modell + Weaviate |
+| Chatfrage | UI → Agent-API `/chat` → Strands-Agent → LLM-Aufrufe und MCP-Tool-Aufrufe → Zahlen-Guardrail → UI |
+
+Der Verlauf gilt **nur für die aktuelle Browser-Sitzung** (max. 30 Vorgänge, nichts wird gespeichert).
+
+### Zahlen-Guardrail
+
+`/chat` prüft im Agent-Service jede Zahl der Antwort gegen die Tool-Ergebnisse der Frage
+(`agents/guardrail.py`) und liefert `unverified`, `figures_checked` und kompakte `trace_messages`
+(`agents/trace.py`, ohne große Tool-Payloads). Nicht belegte Zahlen erscheinen im Chat als Warnung.
+
+### Rechenkern: feste Basisperiode
+
+Der Index wird immer auf der **vollständigen Reihe** berechnet (Basis 11/2024 = 100) und erst danach auf
+`months` gekürzt; Vorjahresraten vergleichen denselben Kalendermonat (`core/index.py`). Dashboard und
+Chat-Tools liefern dadurch dieselben Werte, unabhängig von `months` (`tests/test_calculation_consistency.py`).
+
 Ein PDF-Upload über die Oberfläche ist nicht geplant.
