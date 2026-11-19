@@ -27,7 +27,7 @@ def _basket() -> tuple[Basket | None, dict | None]:
     try:
         return load_basket(), None
     except (RealDataError, OSError, ValueError) as exc:
-        return None, {"error": f"Echte Daten nicht verfÃÂ¼gbar (Referenz-PDFs in reports/real-data): {exc}"}
+        return None, {"error": f"Echte Daten nicht verfügbar (Referenz-PDFs in reports/real-data): {exc}"}
 
 
 def _basket_info(basket: Basket) -> dict:

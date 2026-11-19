@@ -244,3 +244,10 @@ Mit `docker compose up --build -d` starten vier Dienste:
 4. `weaviate` (8080/50051): semantischer PDF-Index.
 
 Details und Windows-Befehle unter [`docs/AGENT_SERVICE_V3.md`](docs/AGENT_SERVICE_V3.md).
+
+### Monitoring (Branch `feature/monitoring-fixes`)
+
+Der Tab **🛰️ Monitoring** zeigt für jede Interaktion den Pfad durch die vier Dienste (UI → Agent-API → MCP →
+Rechenkern / SQLite / Weaviate, LLM-Aufrufe und Tool-Aufrufe des Chats) – nur für die aktuelle Browser-Sitzung.
+Zahlen in Chat-Antworten, die in keinem Tool-Ergebnis vorkommen, werden vom Guardrail im Agent-Service markiert.
+Ein PDF-Upload über die Oberfläche ist nicht geplant.

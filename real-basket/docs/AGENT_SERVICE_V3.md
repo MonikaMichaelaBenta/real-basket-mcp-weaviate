@@ -34,6 +34,17 @@ docker compose exec realbasket-ui python -c "import urllib.request; print(urllib
 
 Der Chat benötigt einen funktionierenden LLM-API-Zugang. Dashboard und PDF-Funktionen arbeiten auch ohne ihn, solange die MCP-Tools verfügbar sind. Für RAG `docker compose exec realbasket-mcp python -m real_basket.storage --mode vector` ausführen.
 
+## Monitoring-Tab und Zahlen-Guardrail
+
+- Tab **🛰️ Monitoring** im Dashboard: Jede Interaktion (Dashboard laden, Referenz-PDF, Auswertungsberichte,
+  Weaviate-Suche, Chatfrage, neuer Chat) wird als Use-Case-Pfad durch die vier Dienste aufgezeichnet und als
+  Graphviz-Diagramm mit nummerierten Kanten dargestellt (`src/real_basket/ui/monitoring.py`).
+- Der Verlauf gilt **nur für die aktuelle Browser-Sitzung** (`st.session_state`, max. 30 Vorgänge) und wird
+  nicht gespeichert.
+- `/chat` liefert zusätzlich `unverified` (Zahlen der Antwort ohne Beleg in den Tool-Ergebnissen, geprüft im
+  Agent-Service mit `agents/guardrail.py`), `figures_checked` und `trace_messages` (kompakte Strands-Nachrichten
+  ohne große Tool-Payloads, `agents/trace.py`).
+
 ## Betriebshinweise
 
 - `.env` enthält Zugangsdaten und gehört nicht ins Git-Repository. Beim Container-Build wird es durch `.dockerignore` ausgeschlossen.

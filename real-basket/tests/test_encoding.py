@@ -21,3 +21,5 @@ def test_utf8_without_mojibake(path: Path):
     text = raw.decode("utf-8")
     found = [m for m in MOJIBAKE if m in text]
     assert not found, f"double-encoded characters {found}"
+    controls = sorted({hex(ord(c)) for c in text if 0x80 <= ord(c) <= 0x9F})
+    assert not controls, f"C1 control characters (bytes decoded as latin-1) {controls}"
