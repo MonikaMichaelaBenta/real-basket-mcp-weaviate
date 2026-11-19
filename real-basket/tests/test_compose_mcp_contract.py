@@ -11,7 +11,18 @@ def test_ui_is_mcp_only_for_financial_data():
                       'from real_basket.agents.tools', 'KnowledgeBase(', 'generate_all('):
         assert forbidden not in text
     assert 'call_tool("get_dashboard_snapshot")' in text
-    assert 'agent_service.client import call_tool, url, ask' in text
+    assert 'agent_service.client import call_tool, chat, url' in text
+    assert 'from real_basket.ui import monitoring as mon' in text
+
+
+def test_monitoring_knows_every_mcp_tool():
+    from real_basket.ui.monitoring import TOOL_HOPS
+
+    text = (ROOT / 'src/real_basket/mcp_server/server.py').read_text(encoding='utf-8')
+    node = ast.parse(text)
+    tools = {n.name for n in node.body if isinstance(n, ast.FunctionDef)
+             and any(getattr(getattr(d, 'func', None), 'attr', '') == 'tool' for d in n.decorator_list)}
+    assert tools and tools == set(TOOL_HOPS)
 
 
 def test_mcp_exposes_dashboard_pdf_storage_tools():

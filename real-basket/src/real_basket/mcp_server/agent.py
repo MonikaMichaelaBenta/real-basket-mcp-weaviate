@@ -17,8 +17,11 @@ Am Ende jeder Antwort: {DISCLAIMER}
 """
 
 
-def ask(question: str, history: Sequence[dict] = ()) -> tuple[str, list[str]]:
-    """Open MCP connection during the agent request; preserve last chat turns as contextual text."""
+def ask(question: str, history: Sequence[dict] = ()) -> tuple[str, list[str], list]:
+    """Open MCP connection during the agent request; preserve last chat turns as contextual text.
+
+    Returns the answer, the names of the invoked MCP tools and the Strands messages of this turn (for the number
+    guardrail and the Monitoring tab)."""
     from strands import Agent
     from strands.tools.mcp import MCPClient
     from mcp.client.streamable_http import streamablehttp_client
@@ -36,4 +39,4 @@ def ask(question: str, history: Sequence[dict] = ()) -> tuple[str, list[str]]:
             for block in msg.get("content", []) if isinstance(msg, dict) else []:
                 if isinstance(block, dict) and "toolUse" in block:
                     invoked.append(block["toolUse"].get("name", "?"))
-        return response, invoked
+        return response, invoked, list(agent.messages)
