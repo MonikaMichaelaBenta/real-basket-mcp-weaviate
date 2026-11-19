@@ -1,7 +1,7 @@
 """Build the RealBasket Docker-Compose architecture decks (German + English, 4 slides each) on the NTT DATA template.
 
 Run:  poetry run python docs/architecture/build_docker_decks.py
-Needs the template docs/architecture/templates/agentic-ai-strands.pptx (not versioned) and the diagram
+Needs the template docs/architecture/templates/agentic-ai-strands.pptx (NTT DATA template, versioned) and the diagram
 docs/architecture/RealBasket-Architektur mit Docker Compose.png.
 Output (next to this script): RealBasket_Docker_Compose_DE.pptx, RealBasket_Docker_Compose_EN.pptx
 
