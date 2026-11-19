@@ -11,7 +11,7 @@ def test_ui_is_mcp_only_for_financial_data():
                       'from real_basket.agents.tools', 'KnowledgeBase(', 'generate_all('):
         assert forbidden not in text
     assert 'call_tool("get_dashboard_snapshot")' in text
-    assert 'mcp_server.agent import ask' in text
+    assert 'agent_service.client import call_tool, url, ask' in text
 
 
 def test_mcp_exposes_dashboard_pdf_storage_tools():
@@ -23,9 +23,9 @@ def test_mcp_exposes_dashboard_pdf_storage_tools():
         assert name in names
 
 
-def test_compose_defines_three_services_and_persistence():
+def test_compose_defines_four_services_and_persistence():
     text = (ROOT / 'docker-compose.yml').read_text(encoding='utf-8')
-    for value in ('realbasket-ui:', 'realbasket-mcp:', 'weaviate:',
+    for value in ('realbasket-ui:', 'realbasket-agent:', 'realbasket-mcp:', 'weaviate:',
                   'realbasket_data:', 'weaviate_data:',
                   'http://realbasket-mcp:8001/mcp'):
         assert value in text

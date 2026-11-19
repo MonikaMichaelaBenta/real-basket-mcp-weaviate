@@ -51,6 +51,28 @@ services:
       timeout: 5s
       retries: 15
 
+  realbasket-agent:
+    build: .
+    restart: unless-stopped
+    command: ["uvicorn", "real_basket.agent_service.api:app", "--host", "0.0.0.0", "--port", "8002"]
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      REALBASKET_MCP_URL: http://realbasket-mcp:8001/mcp
+      REALBASKET_AGENT_PORT: "8002"
+    # Only the UI uses this internal API; no host port is published.
+    expose:
+      - "8002"
+    depends_on:
+      realbasket-mcp:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8002/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+
   realbasket-ui:
     build: .
     restart: unless-stopped
@@ -59,11 +81,11 @@ services:
       - path: .env
         required: false
     environment:
-      REALBASKET_MCP_URL: http://realbasket-mcp:8001/mcp
+      REALBASKET_AGENT_URL: http://realbasket-agent:8002
     ports:
       - "127.0.0.1:8501:8501"
     depends_on:
-      realbasket-mcp:
+      realbasket-agent:
         condition: service_healthy
 
 volumes:

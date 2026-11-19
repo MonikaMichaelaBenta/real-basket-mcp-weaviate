@@ -234,3 +234,13 @@ objects, so the calculations stay unchanged.
 
 Never commit `.env` or API keys. Generated PDFs (`/reports/*.pdf`) and the local index (`/data_store`) are
 git-ignored; the reference PDFs in `reports/real-data` are versioned (source of the real data).
+## RealBasket v3: separat deployter Strands-Agent
+
+Mit `docker compose up --build -d` starten vier Dienste:
+
+1. `realbasket-ui` (Streamlit 8501): reiner HTTP-Client zu `realbasket-agent`.
+2. `realbasket-agent` (FastAPI 8002, nur internes Docker-Netz): Strands-Orchestrator + MCP Gateway.
+3. `realbasket-mcp` (FastMCP 8001): kontrollierte Daten-/Berechnungstools und Original-PDF-Zugriff.
+4. `weaviate` (8080/50051): semantischer PDF-Index.
+
+Details und Windows-Befehle unter [`docs/AGENT_SERVICE_V3.md`](docs/AGENT_SERVICE_V3.md).

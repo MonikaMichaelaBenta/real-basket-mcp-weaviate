@@ -7,7 +7,7 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-from real_basket.mcp_server.client import call_tool, url
+from real_basket.agent_service.client import call_tool, url, ask
 
 st.set_page_config(page_title="RealBasket – MCP", page_icon="🧺", layout="wide")
 
@@ -22,28 +22,22 @@ def snapshot():
 
 
 st.title("🧺 RealBasket")
-st.caption("Streamlit → Strands-Agent → MCP-Server → validierter Rechenkern / SQLite / Weaviate")
-st.sidebar.header("🔌 MCP-Verbindung")
+st.caption("Streamlit → Agent-Service (FastAPI / Strands) → MCP → Rechenkern / SQLite / Weaviate")
+st.sidebar.header("🔌 Agent-Service")
 st.sidebar.code(url(), language="text")
 try:
     data = snapshot()
     if "error" in data:
         raise RuntimeError(data["error"])
 except Exception as exc:
-    import traceback
-
-    st.error("MCP-Abfrage fehlgeschlagen")
-    st.code(
-        "".join(traceback.format_exception(exc)),
-        language="text"
-    )
+    st.error(f"MCP-Server oder Quelldaten nicht erreichbar: {exc}")
     st.info("Starte die Dienste mit `docker compose up --build -d` und prüfe `docker compose logs realbasket-mcp`.")
     if st.button("Erneut verbinden"):
         snapshot.clear()
         st.rerun()
     st.stop()
 
-st.sidebar.success("MCP verbunden")
+st.sidebar.success("Agent-Service / MCP verbunden")
 st.sidebar.caption(str(data["data_basis"]))
 if st.sidebar.button("Daten neu laden"):
     snapshot.clear()
@@ -160,7 +154,6 @@ with view_agent:
         st.chat_message("user").write(question)
         with st.chat_message("assistant"), st.spinner("MCP-Tools werden aufgerufen …"):
             try:
-                from real_basket.mcp_server.agent import ask
                 answer, invoked = ask(question, previous)
             except Exception as exc:
                 answer, invoked = f"Agenten- oder MCP-Fehler: {exc}", []
