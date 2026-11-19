@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_compose_has_four_services_and_separate_agent():
-    services = yaml.safe_load((ROOT / 'docker-compose.yml').read_text())['services']
+    services = yaml.safe_load((ROOT / 'docker-compose.yml').read_text(encoding='utf-8'))['services']
     assert set(services) == {'realbasket-ui', 'realbasket-agent', 'realbasket-mcp', 'weaviate'}
     assert services['realbasket-agent']['environment']['REALBASKET_MCP_URL'] == 'http://realbasket-mcp:8001/mcp'
     assert services['realbasket-ui']['environment']['REALBASKET_AGENT_URL'] == 'http://realbasket-agent:8002'
@@ -20,7 +20,7 @@ def test_compose_has_four_services_and_separate_agent():
 
 
 def test_ui_uses_only_agent_http_client():
-    source = (ROOT / 'src/real_basket/ui/app.py').read_text()
+    source = (ROOT / 'src/real_basket/ui/app.py').read_text(encoding='utf-8')
     assert 'from real_basket.agent_service.client import call_tool, url, ask' in source
     assert 'mcp_server.agent import ask' not in source
     assert 'mcp_server.client import call_tool' not in source
