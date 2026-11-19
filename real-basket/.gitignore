@@ -11,3 +11,6 @@ sessions/
 /reports/*
 !/reports/real-data/
 /data_store/
+
+# NTT DATA slide template (20 MB, internal) - needed only to rebuild the decks with docs/architecture/build_docker_decks.py
+docs/architecture/templates/

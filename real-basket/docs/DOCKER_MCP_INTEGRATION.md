@@ -30,7 +30,7 @@ Sie benötigen einen eigenen Parser, Validierung und Rechenintegration.
 Voraussetzungen: Docker Desktop mit laufender Linux-Engine, Docker Compose V2.
 
 ```powershell
-cd C:\Users\EBENTAM0X\Projekte\real-basket-mcp-weaviate\real-basket
+cd <Repository>\real-basket
 Copy-Item .env.example .env
 # Bearbeite .env: OPENAI_API_KEY oder Azure-OpenAI-Konfiguration
 # Für automatische Vektor-Ingestion beim MCP-Start: REALBASKET_AUTO_INDEX_VECTOR=true
@@ -87,6 +87,6 @@ docker compose down -v                  # ACHTUNG: löscht SQLite/Weaviate-Volum
 - MCP muss vor öffentlichem Betrieb TLS, Authentisierung und Zugriffskontrolle erhalten.
 - Original-PDFs werden per Read-Only-Mount aus `reports/real-data` eingebunden.
 - Private Zugangsdaten nur in `.env` (nicht ins Repository committen).
-- PDF-Upload über eine Weboberfläche ist **noch nicht** implementiert; Dateien werden
-  derzeit über den Quellenordner und die Ingestion-CLI übernommen.
+- Ein PDF-Upload über die Weboberfläche ist **nicht geplant** (Entscheidung 11/2026). Neue Quell-PDFs werden
+  über den Quellenordner `reports/real-data` und die Ingestion-CLI übernommen.
 - Es gibt noch keinen validierten Gehalts-PDF-Importer und keinen fertigen EPPI.

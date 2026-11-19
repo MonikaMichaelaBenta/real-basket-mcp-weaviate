@@ -44,16 +44,24 @@ def health() -> dict:
 
 @app.post("/chat")
 async def chat(payload: ChatRequest) -> dict:
+    """Answer + invoked tools + number-guardrail result + compact turn messages (for the Monitoring tab)."""
     try:
         # Import lazily so UI tool proxy can run even without LLM credentials.
         from real_basket.mcp_server.agent import ask
-        answer, invoked = await run_in_threadpool(
+        answer, invoked, messages = await run_in_threadpool(
             ask, payload.question, [item.model_dump() for item in payload.history]
         )
-        return {"answer": answer, "tools": invoked}
     except Exception as exc:
         log.exception("Agent execution failed")
         raise HTTPException(status_code=502, detail=f"Agent/MCP failure: {exc}") from exc
+    from real_basket.agents.guardrail import answer_figures, unverified_figures
+    from real_basket.agents.trace import compact_messages
+
+    # guardrail runs here: only the agent service sees the full tool results of the turn
+    return {"answer": answer, "tools": invoked,
+            "unverified": unverified_figures(answer, messages, payload.question),
+            "figures_checked": len(answer_figures(answer)),
+            "trace_messages": compact_messages(messages)}
 
 
 @app.post("/tools/{tool_name}")

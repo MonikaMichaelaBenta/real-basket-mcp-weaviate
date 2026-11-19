@@ -32,5 +32,10 @@ def call_tool(name: str, **arguments: Any) -> Any:
 
 
 def ask(question: str, history: list[dict] | None = None) -> tuple[str, list[str]]:
-    data = _post("/chat", {"question": question, "history": history or []}, timeout=180)
+    data = chat(question, history)
     return data["answer"], data.get("tools", [])
+
+
+def chat(question: str, history: list[dict] | None = None) -> dict:
+    """Full /chat response: answer, tools, unverified (guardrail), figures_checked, trace_messages."""
+    return _post("/chat", {"question": question, "history": history or []}, timeout=180)
